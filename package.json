@@ -14,7 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "browser-request": "~0.3.1",
-    "kinda-config": "https://github.com/kinda/kinda-config/tarball/master",
+    "kinda-config": "kinda/kinda-config",
     "lodash": "~2.4.1",
     "request": "^2.44.0"
   }
