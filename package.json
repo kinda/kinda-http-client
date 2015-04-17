@@ -17,9 +17,8 @@
   "author": "Manuel Vila <mvila@3base.com>",
   "license": "MIT",
   "dependencies": {
-    "browser-request": "~0.3.1",
     "kinda-config": "^0.2.2",
     "lodash": "^3.3.0",
-    "request": "^2.44.0"
+    "request": "^2.55.0"
   }
 }

@@ -1,7 +1,7 @@
 "use strict";
 
-var originalRequest = process.browser ? require('browser-request') : require('request' + '');
 var _ = require('lodash');
+var originalRequest = require('request');
 var config = require('kinda-config').get('kinda-http-client');
 
 var KindaHTTPClient = {
@@ -11,7 +11,8 @@ var KindaHTTPClient = {
     _.defaults(defaultOptions, config);
     _.defaults(defaultOptions, {
       json: true,
-      timeout: 30000
+      timeout: 30000,
+      withCredentials: false // Fix https://github.com/request/request/issues/986
     });
 
     var _request = function(options) {
