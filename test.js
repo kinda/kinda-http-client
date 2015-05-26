@@ -8,7 +8,6 @@ let koa = require('koa');
 let koaRouter = require('koa-router');
 let body = require('koa-body');
 let wait = require('co-wait');
-let KindaObject = require('kinda-object');
 let KindaHTTPClient = require('./src');
 
 suite('KindaHTTPClient', function() {
@@ -93,30 +92,12 @@ suite('KindaHTTPClient', function() {
     assert.strictEqual(res.statusCode, 404);
   });
 
-  test('context options', function *() {
-    let app = KindaObject.create();
-    let httpClient = app.create(KindaHTTPClient);
-
+  test('default options', function *() {
+    let httpClient = KindaHTTPClient.create();
     let res = yield httpClient.get(baseURL + '/restricted-area');
     assert.strictEqual(res.statusCode, 403);
 
-    app.context.httpClientHeaders = { 'x-access-token': 'secret' };
-    res = yield httpClient.get(baseURL + '/restricted-area');
-    assert.strictEqual(res.statusCode, 200);
-    assert.strictEqual(res.body, 'ok');
-  });
-
-  test('instance options', function *() {
-    let app = KindaObject.create();
-    app.context.httpClientHeaders = {
-      'x-access-token': 'outdated-secret'
-    };
-
-    let httpClient = app.create(KindaHTTPClient);
-    let res = yield httpClient.get(baseURL + '/restricted-area');
-    assert.strictEqual(res.statusCode, 403);
-
-    httpClient = app.create(KindaHTTPClient, {
+    httpClient = KindaHTTPClient.create({
       headers: { 'x-access-token': 'secret' }
     });
     res = yield httpClient.get(baseURL + '/restricted-area');
@@ -125,11 +106,7 @@ suite('KindaHTTPClient', function() {
   });
 
   test('method options', function *() {
-    let app = KindaObject.create();
-    app.context.httpClientHeaders = {
-      'x-access-token': 'outdated-secret'
-    };
-    let httpClient = app.create(KindaHTTPClient, {
+    let httpClient = KindaHTTPClient.create({
       headers: { 'x-access-token': 'invalid-secret' }
     });
 
@@ -149,7 +126,7 @@ suite('KindaHTTPClient', function() {
     let res = yield httpClient.get(baseURL + '/resource');
     assert.strictEqual(res.statusCode, 400);
 
-    httpClient = KindaHTTPClient.create({ useJSON: true });
+    httpClient = KindaHTTPClient.create({ json: true });
     res = yield httpClient.get(baseURL + '/resource');
     assert.strictEqual(res.statusCode, 200);
     assert.isTrue(_.startsWith(res.headers['content-type'], 'application/json'));
@@ -157,7 +134,7 @@ suite('KindaHTTPClient', function() {
   });
 
   test('post json', function *() {
-    let httpClient = KindaHTTPClient.create({ useJSON: true });
+    let httpClient = KindaHTTPClient.create({ json: true });
     let res = yield httpClient.post(baseURL + '/resource', { param: 123 });
     assert.strictEqual(res.statusCode, 201);
     assert.isTrue(_.startsWith(res.headers['content-type'], 'application/json'));

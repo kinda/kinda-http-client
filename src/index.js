@@ -5,35 +5,26 @@ let originalRequest = require('request');
 let KindaObject = require('kinda-object');
 
 let KindaHTTPClient = KindaObject.extend('KindaObject', function() {
-  this.creator = function(options) {
-    this.instanceOptions = options;
-  };
-
-  this.applyDefaultOptions = function(methodOptions) {
-    let options = {
-      useJSON: false,
+  // options:
+  //   headers: headers to add to all requests
+  //   json: if true, automatically JSON.stringify/parse request body
+  //     and set appropriate headers
+  //   timeout: maximum milliseconds before throwing an error. Default: 30000.
+  this.creator = function(options = {}) {
+    _.defaults(options, {
       timeout: 30000
-    };
-    _.merge(options, this.getOptionsFromContext());
-    _.merge(options, this.instanceOptions);
-    _.merge(options, methodOptions);
-    return options;
+    });
+    this.defaultOptions = options;
   };
 
-  this.getOptionsFromContext = function() {
-    let options = {};
-    if ('httpClientHeaders' in this.context) {
-      options.headers = this.context.httpClientHeaders;
-    }
-    if ('httpClientUseJSON' in this.context) {
-      options.useJSON = this.context.httpClientUseJSON;
-    }
-    if ('httpClientTimeout' in this.context) {
-      options.timeout = this.context.httpClientTimeout;
-    }
-    return options;
-  };
-
+  // options:
+  //   url: request URL
+  //   method: request method
+  //   headers: request headers
+  //   body: request body
+  //   json: if true, automatically JSON.stringify/parse request body
+  //     and set appropriate headers
+  //   timeout: maximum milliseconds before throwing an error. Default: 30000.
   this.request = function(options, body) {
     options = this.normalizeArguments(options, body);
     return this._request(options);
@@ -83,13 +74,8 @@ let KindaHTTPClient = KindaObject.extend('KindaObject', function() {
 
   this._request = function(options) {
     let opts = _.pick(options, [
-      'url',
-      'method',
-      'timeout',
-      'headers',
-      'body'
+      'url', 'method', 'headers', 'body', 'json', 'timeout'
     ]);
-    opts.json = options.useJSON;
     opts.withCredentials = false; // Fix https://github.com/request/request/issues/986
     return function(cb) {
       originalRequest(opts, function(err, res) {
@@ -99,10 +85,11 @@ let KindaHTTPClient = KindaObject.extend('KindaObject', function() {
     };
   };
 
-  this.normalizeArguments = function(options, body) {
-    if (!options) throw new Error('invalid options');
-    if (typeof options === 'string') options = { url: options };
-    options = this.applyDefaultOptions(options);
+  this.normalizeArguments = function(methodOptions, body) {
+    if (!methodOptions) throw new Error('invalid options');
+    if (typeof methodOptions === 'string') methodOptions = { url: methodOptions };
+    let options = _.clone(this.defaultOptions);
+    _.merge(options, methodOptions);
     if (body != null) options.body = body;
     return options;
   };
