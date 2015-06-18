@@ -74,7 +74,7 @@ let KindaHTTPClient = KindaObject.extend('KindaObject', function() {
 
   this._request = function(options) {
     let opts = _.pick(options, [
-      'url', 'method', 'headers', 'body', 'json', 'timeout'
+      'url', 'method', 'headers', 'body', 'json', 'timeout', 'encoding'
     ]);
     opts.withCredentials = false; // Fix https://github.com/request/request/issues/986
     return function(cb) {
