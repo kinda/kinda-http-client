@@ -79,7 +79,9 @@ let KindaHTTPClient = KindaObject.extend('KindaObject', function() {
     opts.withCredentials = false; // Fix https://github.com/request/request/issues/986
     return function(cb) {
       originalRequest(opts, function(err, res) {
-        if (err) return cb(err);
+        if (err) {
+          return cb(new Error('HTTP Request Error: ' + err.message));
+        }
         cb(null, res);
       });
     };
