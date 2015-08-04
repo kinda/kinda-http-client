@@ -19,7 +19,7 @@
   "author": "Manuel Vila <mvila@3base.com>",
   "license": "MIT",
   "dependencies": {
-    "kinda-object": "^0.2.0",
+    "kinda-object": "^0.3.0",
     "lodash": "^3.9.1",
     "request": "^2.60.0"
   },
