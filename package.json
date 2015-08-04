@@ -21,7 +21,7 @@
   "dependencies": {
     "kinda-object": "^0.2.0",
     "lodash": "^3.9.1",
-    "request": "^2.55.0"
+    "request": "^2.60.0"
   },
   "devDependencies": {
     "babel": "^5.4.7",
