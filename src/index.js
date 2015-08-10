@@ -77,14 +77,15 @@ let KindaHTTPClient = KindaObject.extend('KindaObject', function() {
       'url', 'method', 'headers', 'body', 'json', 'timeout', 'encoding'
     ]);
     opts.withCredentials = false; // Fix https://github.com/request/request/issues/986
-    return function(cb) {
+    return new Promise((resolve, reject) => {
       originalRequest(opts, function(err, res) {
         if (err) {
-          return cb(new Error('HTTP Request Error: ' + err.message));
+          reject(new Error('HTTP Request Error: ' + err.message));
+        } else {
+          resolve(res);
         }
-        cb(null, res);
       });
-    };
+    });
   };
 
   this.normalizeArguments = function(methodOptions, body) {

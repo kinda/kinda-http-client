@@ -1,29 +1,28 @@
 'use strict';
 
 let http = require('http');
-require('co-mocha');
 let _ = require('lodash');
 let assert = require('chai').assert;
 let koa = require('koa');
 let koaRouter = require('koa-router');
 let body = require('koa-body');
-let wait = require('co-wait');
+let util = require('kinda-util').create();
 let KindaHTTPClient = require('./src');
 
 suite('KindaHTTPClient', function() {
   let httpServer, baseURL;
 
-  let catchError = function *(fn) {
+  let catchError = async function(fn) {
     let err;
     try {
-      yield fn();
+      await fn();
     } catch (e) {
       err = e;
     }
     return err;
   };
 
-  suiteSetup(function *() {
+  suiteSetup(async function() {
     let serverPort = 8888;
     baseURL = 'http://localhost:' + serverPort;
 
@@ -68,7 +67,7 @@ suite('KindaHTTPClient', function() {
     });
 
     router.get('/big-resource', function *() {
-      yield wait(55);
+      yield util.timeout(55);
       this.body = 'ok';
     });
 
@@ -76,44 +75,44 @@ suite('KindaHTTPClient', function() {
     httpServer.listen(serverPort);
   });
 
-  suiteTeardown(function *() {
+  suiteTeardown(async function() {
     httpServer.close();
   });
 
-  test('simple get', function *() {
+  test('simple get', async function() {
     let httpClient = KindaHTTPClient.create();
 
-    let res = yield httpClient.get(baseURL + '/simple');
+    let res = await httpClient.get(baseURL + '/simple');
     assert.strictEqual(res.statusCode, 200);
     assert.isTrue(_.startsWith(res.headers['content-type'], 'text/plain'));
     assert.strictEqual(res.body, 'ok');
 
-    res = yield httpClient.get(baseURL + '/invalid-url');
+    res = await httpClient.get(baseURL + '/invalid-url');
     assert.strictEqual(res.statusCode, 404);
   });
 
-  test('default options', function *() {
+  test('default options', async function() {
     let httpClient = KindaHTTPClient.create();
-    let res = yield httpClient.get(baseURL + '/restricted-area');
+    let res = await httpClient.get(baseURL + '/restricted-area');
     assert.strictEqual(res.statusCode, 403);
 
     httpClient = KindaHTTPClient.create({
       headers: { 'x-access-token': 'secret' }
     });
-    res = yield httpClient.get(baseURL + '/restricted-area');
+    res = await httpClient.get(baseURL + '/restricted-area');
     assert.strictEqual(res.statusCode, 200);
     assert.strictEqual(res.body, 'ok');
   });
 
-  test('method options', function *() {
+  test('method options', async function() {
     let httpClient = KindaHTTPClient.create({
       headers: { 'x-access-token': 'invalid-secret' }
     });
 
-    let res = yield httpClient.get(baseURL + '/restricted-area');
+    let res = await httpClient.get(baseURL + '/restricted-area');
     assert.strictEqual(res.statusCode, 403);
 
-    res = yield httpClient.get({
+    res = await httpClient.get({
       url: baseURL + '/restricted-area',
       headers: { 'x-access-token': 'secret' }
     });
@@ -121,38 +120,38 @@ suite('KindaHTTPClient', function() {
     assert.strictEqual(res.body, 'ok');
   });
 
-  test('get json', function *() {
+  test('get json', async function() {
     let httpClient = KindaHTTPClient.create();
-    let res = yield httpClient.get(baseURL + '/resource');
+    let res = await httpClient.get(baseURL + '/resource');
     assert.strictEqual(res.statusCode, 400);
 
     httpClient = KindaHTTPClient.create({ json: true });
-    res = yield httpClient.get(baseURL + '/resource');
+    res = await httpClient.get(baseURL + '/resource');
     assert.strictEqual(res.statusCode, 200);
     assert.isTrue(_.startsWith(res.headers['content-type'], 'application/json'));
     assert.deepEqual(res.body, { result: 'ok' });
   });
 
-  test('post json', function *() {
+  test('post json', async function() {
     let httpClient = KindaHTTPClient.create({ json: true });
-    let res = yield httpClient.post(baseURL + '/resource', { param: 123 });
+    let res = await httpClient.post(baseURL + '/resource', { param: 123 });
     assert.strictEqual(res.statusCode, 201);
     assert.isTrue(_.startsWith(res.headers['content-type'], 'application/json'));
     assert.deepEqual(res.body, { result: 'ok' });
   });
 
-  test('timeout', function *() {
+  test('timeout', async function() {
     let httpClient = KindaHTTPClient.create();
 
-    let err = yield catchError(function *() {
-      yield httpClient.get({
+    let err = await catchError(async function() {
+      await httpClient.get({
         url: baseURL + '/big-resource',
         timeout: 50
       });
     });
     assert.instanceOf(err, Error);
 
-    let res = yield httpClient.get({
+    let res = await httpClient.get({
       url: baseURL + '/big-resource',
       timeout: 100
     });

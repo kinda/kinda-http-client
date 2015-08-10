@@ -21,6 +21,7 @@
   "license": "MIT",
   "dependencies": {
     "kinda-object": "^0.3.0",
+    "kinda-util": "^0.2.6",
     "lodash": "^3.9.1",
     "request": "^2.60.0"
   },
@@ -28,13 +29,11 @@
     "babel": "^5.4.7",
     "babel-eslint": "^4.0.5",
     "chai": "^2.3.0",
-    "co-mocha": "^1.1.0",
-    "co-wait": "0.0.0",
     "eslint": "^1.0.0",
     "eslint-config-kinda": "^0.2.0",
-    "koa": "^0.20.0",
+    "koa": "^0.21.0",
     "koa-body": "^1.2.1",
-    "koa-router": "^5.0.1",
+    "koa-router": "^5.1.2",
     "mocha": "^2.2.5"
   }
 }
