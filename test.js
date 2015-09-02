@@ -66,9 +66,21 @@ suite('KindaHTTPClient', function() {
       this.body = { result: 'ok' };
     });
 
+    router.put('/resource', function *() {
+      this.body = { result: 'ok' };
+    });
+
+    router.del('/resource', function *() {
+      this.status = 204;
+    });
+
     router.get('/big-resource', function *() {
       yield util.timeout(55);
       this.body = 'ok';
+    });
+
+    router.get('/binary', function *() {
+      this.body = new Buffer([1, 2, 3]);
     });
 
     httpServer = http.createServer(server.callback());
@@ -138,6 +150,32 @@ suite('KindaHTTPClient', function() {
     assert.strictEqual(res.statusCode, 201);
     assert.isTrue(_.startsWith(res.headers['content-type'], 'application/json'));
     assert.deepEqual(res.body, { result: 'ok' });
+  });
+
+  test('put json', async function() {
+    let httpClient = KindaHTTPClient.create({ json: true });
+    let res = await httpClient.put(baseURL + '/resource');
+    assert.strictEqual(res.statusCode, 200);
+    assert.isTrue(_.startsWith(res.headers['content-type'], 'application/json'));
+    assert.deepEqual(res.body, { result: 'ok' });
+  });
+
+  test('delete json', async function() {
+    let httpClient = KindaHTTPClient.create({ json: true });
+    let res = await httpClient.del(baseURL + '/resource');
+    assert.strictEqual(res.statusCode, 204);
+  });
+
+  test('get binary', async function() {
+    let httpClient = KindaHTTPClient.create();
+
+    let res = await httpClient.get({ url: baseURL + '/binary', encoding: null });
+    assert.strictEqual(res.statusCode, 200);
+    assert.isTrue(Buffer.isBuffer(res.body));
+    assert.strictEqual(res.body.length, 3);
+    assert.strictEqual(res.body[0], 1);
+    assert.strictEqual(res.body[1], 2);
+    assert.strictEqual(res.body[2], 3);
   });
 
   test('timeout', async function() {

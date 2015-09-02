@@ -1,7 +1,8 @@
 'use strict';
 
 let _ = require('lodash');
-let originalRequest = require('request');
+let superagent = require('superagent');
+let Buffers = require('buffers');
 let KindaObject = require('kinda-object');
 
 let KindaHTTPClient = KindaObject.extend('KindaObject', function() {
@@ -73,16 +74,66 @@ let KindaHTTPClient = KindaObject.extend('KindaObject', function() {
   };
 
   this._request = function(options) {
-    let opts = _.pick(options, [
-      'url', 'method', 'headers', 'body', 'json', 'timeout', 'encoding'
-    ]);
-    opts.withCredentials = false; // Fix https://github.com/request/request/issues/986
+    let method = options.method.toLowerCase();
+    if (method === 'delete') method = 'del';
+    let req = superagent[method](options.url);
+
+    if (!_.isEmpty(options.headers)) req.set(options.headers);
+
+    if (options.timeout != null) req.timeout(options.timeout);
+
+    let json = options.json;
+
+    if ('encoding' in options) {
+      if (options.encoding != null) { // TODO: support more encodings
+        throw new Error('unsupported encoding');
+      }
+      json = false; // cannot have both 'json' and 'null encoding'
+      req.buffer();
+      req.parse(function(res, done) {
+        let buffers = [];
+        res.on('data', function(buffer) {
+          buffers.push(buffer);
+        });
+        res.on('end', function() {
+          res.text = Buffers(buffers).toBuffer(); // eslint-disable-line new-cap
+          done();
+        });
+      });
+    }
+
+    if (json) req.set('Accept', 'application/json');
+
+    if (options.body != null) {
+      let body = options.body;
+      if (json) {
+        body = JSON.stringify(body);
+        req.set('Content-Type', 'application/json');
+      }
+      req.send(body);
+    }
+
     return new Promise((resolve, reject) => {
-      originalRequest(opts, function(err, res) {
+      req.end(function(err, res) {
+        if (err && ('status' in err)) {
+          // don't consider status 4xx or 5xx as errors
+          res = err.response;
+          err = null;
+        }
+
         if (err) {
           reject(new Error('HTTP Request Error: ' + err.message));
         } else {
-          resolve(res);
+          let result = {
+            statusCode: res.status,
+            headers: res.header
+          };
+          if (json) {
+            result.body = res.body;
+          } else {
+            result.body = res.text;
+          }
+          resolve(result);
         }
       });
     });
