@@ -74,6 +74,14 @@ suite('KindaHTTPClient', function() {
       this.status = 204;
     });
 
+    router.get('/not-json', function *() {
+      this.body = 'ok'; // 'Content-Type' will be 'text/plain'
+    });
+
+    router.get('/json-but-incorrect-content-type', function *() {
+      this.body = '"ok"'; // 'Content-Type' will be 'text/plain'
+    });
+
     router.get('/big-resource', function *() {
       yield util.timeout(55);
       this.body = 'ok';
@@ -142,6 +150,18 @@ suite('KindaHTTPClient', function() {
     assert.strictEqual(res.statusCode, 200);
     assert.isTrue(_.startsWith(res.headers['content-type'], 'application/json'));
     assert.deepEqual(res.body, { result: 'ok' });
+
+    httpClient = KindaHTTPClient.create({ json: true });
+    res = await httpClient.get(baseURL + '/not-json');
+    assert.strictEqual(res.statusCode, 200);
+    assert.isTrue(_.startsWith(res.headers['content-type'], 'text/plain'));
+    assert.deepEqual(res.body, 'ok');
+
+    httpClient = KindaHTTPClient.create({ json: true });
+    res = await httpClient.get(baseURL + '/json-but-incorrect-content-type');
+    assert.strictEqual(res.statusCode, 200);
+    assert.isTrue(_.startsWith(res.headers['content-type'], 'text/plain'));
+    assert.deepEqual(res.body, 'ok');
   });
 
   test('post json', async function() {
@@ -164,6 +184,7 @@ suite('KindaHTTPClient', function() {
     let httpClient = KindaHTTPClient.create({ json: true });
     let res = await httpClient.del(baseURL + '/resource');
     assert.strictEqual(res.statusCode, 204);
+    assert.isUndefined(res.body);
   });
 
   test('get binary', async function() {

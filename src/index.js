@@ -82,13 +82,16 @@ let KindaHTTPClient = KindaObject.extend('KindaObject', function() {
 
     if (options.timeout != null) req.timeout(options.timeout);
 
-    let json = options.json;
-
+    let encoding;
     if ('encoding' in options) {
-      if (options.encoding != null) { // TODO: support more encodings
+      if (options.encoding == null) {
+        encoding = 'buffer';
+      } else { // TODO: support more encodings
         throw new Error('unsupported encoding');
       }
-      json = false; // cannot have both 'json' and 'null encoding'
+    }
+
+    if (encoding === 'buffer') { // NodeJS only
       req.buffer();
       req.parse(function(res, done) {
         let buffers = [];
@@ -96,17 +99,17 @@ let KindaHTTPClient = KindaObject.extend('KindaObject', function() {
           buffers.push(buffer);
         });
         res.on('end', function() {
-          res.text = Buffers(buffers).toBuffer(); // eslint-disable-line new-cap
-          done();
+          let body = Buffers(buffers).toBuffer(); // eslint-disable-line new-cap
+          done(null, body);
         });
       });
     }
 
-    if (json) req.set('Accept', 'application/json');
+    if (options.json) req.set('Accept', 'application/json');
 
     if (options.body != null) {
       let body = options.body;
-      if (json) {
+      if (options.json) {
         body = JSON.stringify(body);
         req.set('Content-Type', 'application/json');
       }
@@ -128,10 +131,23 @@ let KindaHTTPClient = KindaObject.extend('KindaObject', function() {
             statusCode: res.status,
             headers: res.header
           };
-          if (json) {
+          if (encoding === 'buffer') {
+            result.body = res.body;
+          } else if (res.type === 'application/json') {
             result.body = res.body;
           } else {
-            result.body = res.text;
+            let body = res.text;
+            if (res.status === 204 && body === '') body = undefined;
+            if (options.json && body) {
+              // try to parse JSON even if the server doesn't answer
+              // with 'application/json' as 'Content-Type'
+              try {
+                body = JSON.parse(body);
+              } catch (err) {
+                // noop
+              }
+            }
+            result.body = body;
           }
           resolve(result);
         }
