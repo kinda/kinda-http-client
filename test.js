@@ -78,6 +78,11 @@ suite('KindaHTTPClient', function() {
       this.body = 'ok'; // 'Content-Type' will be 'text/plain'
     });
 
+    router.get('/not-unicode', function *() {
+      this.type = 'text/html; charset=iso-8859-1';
+      this.body = new Buffer('436166e9', 'hex');
+    });
+
     router.get('/json-but-incorrect-content-type', function *() {
       this.body = '"ok"'; // 'Content-Type' will be 'text/plain'
     });
@@ -185,6 +190,15 @@ suite('KindaHTTPClient', function() {
     let res = await httpClient.del(baseURL + '/resource');
     assert.strictEqual(res.statusCode, 204);
     assert.isUndefined(res.body);
+  });
+
+  test('get non unicode text', async function() {
+    let httpClient = KindaHTTPClient.create();
+    let res = await httpClient.get({ url: baseURL + '/not-unicode', encoding: null });
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.headers['content-type'], 'text/html; charset=iso-8859-1');
+    let body = res.body.toString('binary'); // equivalent to latin-1
+    assert.strictEqual(body, 'Café');
   });
 
   test('get binary', async function() {
